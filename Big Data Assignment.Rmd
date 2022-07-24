@@ -1,0 +1,143 @@
+---
+title: "Big Data Assignment"
+output: html_notebook
+---
+
+
+
+```{r}
+###Datasets: Dataframes flights, airlines in the nycflights13 package. 
+
+##Part I. Reading in the dataset and basic analysis
+
+#install.packages("nycflights13")
+
+# Load standard libraries
+library(tidyverse)
+library(nycflights13)
+
+# Get detials about nycflights13 dataset
+?nycflights13
+
+?flights
+
+# Load different data points from the nycflights13 library
+airlines_data <- airlines
+flights_data <- flights
+
+# Variables in airlines_data dataset
+head(airlines_data)
+tail(airlines_data,5)
+
+
+# Variables in flights dataset
+head(flights_data)
+tail(flights_data,5)
+
+
+
+```
+
+
+```{r}
+###Pat II. Visualizing relationships between pairs of variables
+
+#install.packages("scatterplot3d")
+
+
+pairs(~air_time + distance+ arr_delay + flight + dep_time + sched_dep_time + dep_delay, data = flights_data,
+      main = "Visualizing relationships between pairs of variables")
+
+```
+
+
+```{r}
+###Part III. Manipulating/ joining/ transforming Data
+
+dim(airlines_data)
+dim(flights_data)
+
+
+```
+
+
+
+```{r}
+###Part IV. Summarizing data
+
+#summary for airlines_data
+summary(airlines_data)
+
+
+#summary for flights_data
+summary(flights_data)
+
+```
+
+```{r}
+###  Sample Tasks: T1.
+## Produce a table to summarize the origin variable.
+
+##install.packages("psych")
+library(psych)
+
+origin <- data.frame(flights_data$origin)
+
+#create summary table for origin column
+describe(origin)
+
+```
+
+```{r}
+###  Sample Tasks: T2.
+
+## Produce a bar chart of the origin variable.
+
+# barchart with added parameters
+barplot(x=count,y=flights_data$origin,
+main = " Bar chart of the origin variable",
+xlab = "count",
+ylab = "Origin",
+col = "darkred",
+horiz = TRUE)
+
+```
+
+
+```{r}
+###  Sample Tasks: T3. 
+
+## Calculate the mean and standard deviation of the distance variable.
+
+# mean of the distance variable.
+mean(flights_data$distance)
+
+#standard deviation of the distance variable.
+sd(flights_data$distance)
+
+```
+
+```{r}
+###  Sample Tasks: T4. 
+
+## Produce a histogram of the distance variable.
+
+# histogram of the distance variable.
+hist(flights_data$distance, , main="Histogram for Distance variable")
+
+
+```
+
+
+```{r}
+###  Sample Tasks: T5. 
+
+## Visualize the relationship between arr_time and sched_arr_time using scatterplot.
+
+# Simple Scatterplot
+attach(flights_data)
+plot(arr_time, sched_arr_time, main="Scatterplot showing relationship between arr_time and sched_arr_time",
+   xlab="Arrival time ", ylab="Schedule arrival time", pch=19)
+
+```
+

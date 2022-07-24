@@ -1,0 +1,223 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+##Data Reading
+
+netds <- read.csv("netflix_dataset.csv",na.strings=c("","NA"),stringsAsFactors=FALSE)
+
+netds
+```
+
+
+```{r}
+#install plotly package
+#install.packages("plotly")
+
+#load the plotly
+library(plotly)
+values_table1 <- rbind(c('show_id', 'type', 'title', 'director', 'cast', 'country', 'date_added', 'release_year', 'rating' , 'duration', 'listed_in', 'description'), c("Unique ID for every Movie / TV Show", 
+     "Identifier - A Movie or TV Show", 
+     "Title of the Movie or TV Show", 
+     "Director of the Movie /TV Show", 
+    "Actors involved in the Movie / TV Show",
+    "Country where the movie / show was produced",
+    "Added date on Netflix",
+    "Actual release year of the Movie / TV Show",
+    "Rating type of the Movie or TV Show",
+    "Total Duration - in minutes or number of seasons",
+    "Genere",
+    "The summary description"))
+fig_table1 <- plot_ly(
+  type = 'table',
+  columnorder = c(1,2),
+  columnwidth = c(12,12),
+  header = list(
+    values = c('<b>VARIABLES</b><br>', '<b>DESCRIPTION</b>'),
+    line = list(color = '#506784'),
+    fill = list(color = '#119DFF'),
+    align = c('left','center'),
+    font = list(color = 'white', size = 12),
+    height = 40
+  ),
+  cells = list(
+    values = values_table1,
+    line = list(color = '#506784'),
+    fill = list(color = c('#25FEFD', 'white')),
+    align = c('left', 'left'),
+    font = list(color = c('#506784'), size = 12),
+    height = 30
+    ))
+fig_table1
+
+```
+
+```{r}
+##Data cleaning
+
+netds$show_id <- NULL
+
+#Rating is categorical variable so i will change the type of it.
+netds$rating <- as.factor(netds$rating)
+
+#change the date format
+library(lubridate)
+netds$date_added <- mdy(netds$date_added)
+
+
+
+## “type” and “Listed_in” should also be categorical variable
+netds$listed_in <- as.factor(netds$listed_in)
+netds$type <- as.factor(netds$type)
+
+# printing the missing values by creating a new data frame
+data.frame("Variable"=c(colnames(netds)), "Missing Values"=sapply(netds, function(x) sum(is.na(x))), row.names=NULL)
+```
+
+
+```{r}
+#function to find a mode to fill  missing values for rating 
+mode <- function(v) {
+   uniqv <- unique(v)
+   uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+netds$rating[is.na(netds$rating)] <- mode(netds$rating)
+
+
+# printing the missing values by creating a new data frame
+data.frame("Variable"=c(colnames(netds)), "Missing Values"=sapply(netds, function(x) sum(is.na(x))), row.names=NULL)
+```
+
+```{r}
+#drop duplicate values in title, country, type and release_year
+library(dplyr)
+netds <- distinct(netds, title, country, type, release_year, .keep_all = TRUE)
+```
+
+```{R}
+f <- netds$title
+f <-tibble(f)
+netds$title <- f
+
+library(lubridate)
+netds$new_date <- year(netds$date_added)
+
+df_by_date <- netds$title %>% 
+ group_by(netds$new_date, netds$type) %>% 
+ na.omit(netds$new_date) %>% 
+ summarise(added_content_num = n())
+library(ggplot2)
+ 
+Type<- df_by_date$`netds$type`
+Date <- df_by_date$`netds$new_date`
+Content_Number <- df_by_date$added_content_num
+g1<- ggplot(df_by_date, aes(Date, Content_Number))+
+ geom_line(aes(colour = Type), size = 2)+ 
+ geom_point() + 
+ xlab("Date") + 
+ ylab("Number of Content")+
+ ggtitle("Amount of Netflix Content By Time")
+
+
+
+```
+
+
+
+
+```{r}
+###Data Visualization
+
+### The Most watched Shows on Netflix
+
+library(tibble)
+library(dplyr)
+library(ggplot2)
+
+netds <- data.frame(netds)
+amount_by_type <- netds %>% group_by(type) %>% summarise(
+ count = n())
+
+figure00 <- ggplot(data = amount_by_type, aes(x= type, y= count, fill= type))+ 
+ geom_bar(colour ="black", size= 0.8, fill = "dark green" , stat = "identity")+
+ guides(fill= FALSE)+
+ xlab("Netflix Content by Type") + ylab("Amount of Netflix Content")+
+ ggtitle(" Most watched Shows on Netflix")
+ggplotly(figure00, dynamicTicks = T)
+```
+
+
+
+```{r}
+
+library(plotly)
+data <-netds$title %>% 
+ group_by(netds$rating) %>% 
+ summarise(content_num = n())
+names(data) [1] <- "rating"
+names(data) [2] <- "content"
+figure2 <- plot_ly(data, labels = ~rating, values = ~content, type = 'pie')
+
+figure2 <- figure2 %>% layout(title = 'Customer satisfaction on Shows by Rating',
+ xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+ yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+figure2
+
+```
+
+```{R}
+# data preparation 
+data2 <-netds$title %>% 
+ group_by(netds$rating, netds$type)%>% 
+ summarise(content_num = n())
+names(data2) [1] <- "rating"
+names(data2) [2] <- "type"
+names(data2) [3] <- "content"
+newdata2 <- reshape(data=data.frame(data2),idvar="rating",
+ v.names = "content",
+ timevar = "type",
+ direction="wide") 
+ 
+ 
+names(newdata2)[2] <- "Movie"
+names(newdata2)[3] <- "TV Show"
+#
+newdata2$`TV Show`[is.na(newdata2$`TV Show`)] <- print(0)
+```
+
+
+
+```{R}
+
+# visualisation based on customer rating on shows
+library(plotly)
+rating <- newdata2$rating
+Movie <- newdata2$Movie
+Tv_Show <- newdata2$`TV Show`
+figure3 <- plot_ly(newdata2, x = ~rating, y = ~Movie, type = 'bar', name = 'Movie')
+figure3 <- figure3 %>% add_trace(y = ~Tv_Show, name = 'TV Show')
+figure3 <- figure3 %>% layout(yaxis = list(title = 'frequency'),
+ barmode = 'stack', 
+ title="Content By Rating (Movie vs. TV Show)")
+figure3
+
+
+```
+
+
+```{r}
+
+names(netds)[1] <- 'Show_type'
+
+# Make dependent variable as a factor (categorical)
+netds$rating = as.factor(netds$rating)
+netds$type = as.factor(netds$Show_type)
+
+summary(netds)
+
+```
+
+
